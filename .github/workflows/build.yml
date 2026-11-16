@@ -1,12 +1,15 @@
 name: Build Example
 
-# Controls when the workflow will run
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,13 +19,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: verification
-        run: |
-          node --version
-          npm --version
-          
-      - name: List repository files
-        run: ls -alhR
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build calculator
         run: npm run build --if-present
@@ -35,6 +33,6 @@ jobs:
       - name: Upload calculator ZIP
         uses: actions/upload-artifact@v7
         with:
-          name: calculator-app-zip
-          path: calculator-app.zip
+          path: ${{ runner.temp }}/calculator-app.zip
+          archive: false
           if-no-files-found: error
