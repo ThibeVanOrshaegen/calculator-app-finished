@@ -6,19 +6,22 @@ name: Dependencies Example
 on:
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  dependencies:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out calculator
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js environment
         uses: actions/setup-node@v7
         with:
           node-version: '22'
 
+      - name: verification
+        run: |
+          node --version
+          npm --version
+          
       - name: List repository files
         run: ls -alhR
