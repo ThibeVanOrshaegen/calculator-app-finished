@@ -1,0 +1,67 @@
+name: Node.js CI 4
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout calculator
+        uses: actions/checkout@v4
+        with:
+          repository: PXL-2TIN-DevOps-Resources/calculator-app-finished
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - run: npm install --no-package-lock --no-save
+
+      - name: Run unit tests and generate coverage
+        env:
+          JEST_JUNIT_OUTPUT_FILE: ${{ github.workspace }}/test-reports/junit.xml
+        run: >-
+          npm test -- --ci --reporters=default --reporters=jest-junit
+          --coverage --coverageDirectory=test-reports/coverage --coverageReporters=lcov
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: test-reports/
+          if-no-files-found: error
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout calculator
+        uses: actions/checkout@v4
+        with:
+          repository: PXL-2TIN-DevOps-Resources/calculator-app-finished
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        id: install
+        run: npm install --no-audit
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run format:check
+
+      - name: Security audit
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm audit --audit-level=low
