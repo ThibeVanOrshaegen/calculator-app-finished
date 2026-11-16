@@ -1,0 +1,43 @@
+name: Build Example
+
+# Controls when the workflow will run
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: verification
+        run: |
+          node --version
+          npm --version
+          
+      - name: List repository files
+        run: ls -alhR
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build calculator
+        run: npm run build --if-present
+
+      - name: Bundle calculator
+        run: |
+          zip -qry "$RUNNER_TEMP/calculator-app.zip" . \
+            -x '.git/*' '.github/*' '.env' '.env.*' '*/.env' '*/.env.*' '.npmrc' '*/.npmrc'
+
+      - name: Upload calculator ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: calculator-app-zip
+          path: calculator-app.zip
+          if-no-files-found: error
