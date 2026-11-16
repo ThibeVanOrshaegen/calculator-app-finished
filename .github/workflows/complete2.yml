@@ -1,4 +1,4 @@
-name: Build Example test report
+name: Build Example
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-package-lock --no-save
 
       - name: Build calculator
         run: npm run build --if-present
@@ -28,30 +28,36 @@ jobs:
       - name: Run unit tests
         id: tests
         env:
-          JEST_JUNIT_OUTPUT_FILE: ${{ runner.temp }}/junit.xml
-        run: npm test -- --ci --reporters=default --reporters=jest-junit
+          JEST_JUNIT_OUTPUT_FILE: ${{ github.workspace }}/test-reports/junit.xml
+        run: >-
+          npm test -- --ci --reporters=default --reporters=jest-junit
+          --coverage --coverageDirectory=test-reports/coverage --coverageReporters=lcov
 
       - name: Upload unit test report
         if: ${{ !cancelled() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
         uses: actions/upload-artifact@v7
         with:
-          path: ${{ runner.temp }}/junit1.xml
+          path: test-reports/junit.xml
           archive: false
+          if-no-files-found: error
+
+      - name: Publish test and coverage report
+        if: ${{ !cancelled() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
+        uses: mridang/action-test-reporter@v3.0.0
+        with:
+          name: Unit tests
+          results-path: test-reports/junit.xml
+          coverage-path: test-reports/coverage/lcov.info
 
       - name: Bundle calculator
         run: |
           zip -qry "$RUNNER_TEMP/calculator-app.zip" . \
-            -x '.git/*' '.github/*' '.env' '.env.*' '*/.env' '*/.env.*' '.npmrc' '*/.npmrc'
+            -x '.git/*' '.github/*' 'test-reports/*' \
+               '.env' '.env.*' '*/.env' '*/.env.*' '.npmrc' '*/.npmrc'
+
       - name: Upload calculator ZIP
         uses: actions/upload-artifact@v7
         with:
           path: ${{ runner.temp }}/calculator-app.zip
           archive: false
-
-      - name: Publish test and coverage report
-        uses: mridang/action-test-reporter@v1
-        with:
-          name: Unit tests
-          results-path: ./.out/junit2.xml
-          coverage-path: coverage/lcov.info
-     
+          if-no-files-found: error
