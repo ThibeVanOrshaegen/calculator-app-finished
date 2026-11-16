@@ -35,7 +35,7 @@ jobs:
         if: ${{ !cancelled() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
         uses: actions/upload-artifact@v7
         with:
-          path: ${{ runner.temp }}/junit.xml
+          path: ${{ runner.temp }}/junit1.xml
           archive: false
 
       - name: Bundle calculator
@@ -48,5 +48,10 @@ jobs:
           path: ${{ runner.temp }}/calculator-app.zip
           archive: false
 
-      - name: Better Test Reports Action
-        uses: mridang/action-test-reporter@v3.0.1
+      - name: Publish test and coverage report
+        uses: mridang/action-test-reporter@v1
+        with:
+          name: Unit tests
+          results-path: ./.out/junit2.xml
+          coverage-path: coverage/lcov.info
+     
